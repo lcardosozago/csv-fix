@@ -1,96 +1,116 @@
 const readline = require("readline");
 const fs = require("fs");
+const fsPromises = fs.promises;
 
-var deathColumnNumber;
-var linesToRemoveDeath = [];
-var linesToAddDeath = [];
-
-function readCsvFile() {
-  return new Promise((res, rej) => {
-    try {
-      var data = [];
-      var readInterface = readline.createInterface({
-        input: fs.createReadStream("./microdados.csv"),
-        terminal: false,
-      });
-
-      readInterface
-        .on("line", function (line) {
-          lineTrim = line.trim();
-          lineResult = lineTrim.split(";");
-          data.push(lineResult);
-        })
-        .on("close", function () {
-          res(data);
-        });
-    } catch (err) {
-      rej(err);
-    }
-  });
-}
-
-const rl = readline.createInterface({
+const rlBash = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-rl.question("Index da coluna DETALHAMENTO_STATUS: \n", (answer) => {
-  deathColumnNumber = answer ? parseInt(answer) : 11;
+const getLine = (function () {
+  const getLineGen = (async function* () {
+      for await (const line of rlBash) {
+          yield line;
+      }
+  })();
+  return async () => ((await getLineGen.next()).value);
+})();
 
-  rl.question("Linhas a remover separado por espaços: \n", (answer) => {
-    linesToRemoveDeath = answer.split(" ");
-    if (linesToRemoveDeath.length === 1 && linesToRemoveDeath[0] === "") {
-      linesToRemoveDeath.pop();
-    }
+const readCsvFile = async () => {
+  try {
+    let data = [];
 
-    rl.question("Linhas a adicionar separado por espaços: \n", (answer) => {
-      linesToAddDeath = answer.split(" ");
-      if (linesToAddDeath.length === 1 && linesToAddDeath[0] === "") {
-        linesToAddDeath.pop();
+    let readInterface = await readline.createInterface({
+      input: fs.createReadStream("./microdados.csv"),
+      terminal: false,
+    });
+
+    let fullLine = '';
+    let lineCounter = 1;
+
+    for await (const line of readInterface) {
+      let shouldJoinNextLine = false;
+
+      let lineWithoutBreakline = line.replace(/(\r\n|\n|\r)/gm,"");
+
+      fullLine += lineWithoutBreakline;
+
+      let splittedByDoubleQuote = fullLine.split('"');
+
+      if (splittedByDoubleQuote.length % 2 === 0) {
+        shouldJoinNextLine = true;
       }
 
-      readCsvFile().then(function (result) {
-        var fileResult = "";
+      if (!shouldJoinNextLine) {
+        data.push(fullLine);
+        fullLine = '';
+        //console.log(`line ${lineCounter++} success`);
+      }
+    }
 
-        result = result.map(function (line) {
-          return line.map(function (column) {
-            return column.replace(/\r\n|\n|\r/gm, "");
-          });
-        });
+    readInterface.close();
 
-        linesToRemoveDeath.map(function (value) {
-          value = parseInt(value);
-          console.log("linha remover obito: ", value);
-          console.log(result[value]);
-          if (result[value][deathColumnNumber] === "RECUPERADO") {
-            throw "[ERROR] recovered line";
-          } else if (result[value][deathColumnNumber] === "RECUPERADO") {
-          }
+    return data;
+  } catch (err) {
+    console.error(err.message);
+  }
+}
 
-          result[value][deathColumnNumber] = "";
-        });
+const main = async () => {
+  console.log('Numero da coluna DETALHAMENTO_STATUS: ');
+  let deathColumnNumber = await getLine();
+  console.log('Linhas para remover obito separadas por espaço: ');
+  let linesToRemoveDeath = await getLine();
+  console.log('Linhas adicionar obito separadas por espaço: ');
+  let linesToAddDeath = await getLine();
 
-        linesToAddDeath.map(function (value) {
-          value = parseInt(value);
-          console.log("linha add obito: ", value);
-          console.log(result[value]);
-          if (result[value][deathColumnNumber] === "RECUPERADO") {
-            throw "[ERROR] recovered line";
-          }
+  deathColumnNumber = deathColumnNumber ? parseInt(deathColumnNumber) : 11;
+  linesToRemoveDeath = linesToRemoveDeath ? linesToRemoveDeath.split(' ') : [];
+  linesToAddDeath = linesToAddDeath ? linesToAddDeath.split(' ') : [];
 
-          result[value][deathColumnNumber] = "OBITO";
-        });
+  if (linesToRemoveDeath.length === 1 && linesToRemoveDeath[0] === "") {
+    linesToRemoveDeath.pop();
+  }
 
-        result.map(function (line) {
-          fileResult += line.join(";") + "\n";
-        });
+  if (linesToAddDeath.length === 1 && linesToAddDeath[0] === "") {
+    linesToAddDeath.pop();
+  }
 
-        fs.writeFile("fixed_microdados.csv", fileResult, function (err) {
-          if (err) throw err;
-          console.log("File was created successfully.");
-          rl.close();
-        });
-      });
-    });
+  let result = await readCsvFile();
+
+  let fileResult = "";
+
+  linesToRemoveDeath.forEach(function (value) {
+    value = parseInt(value);
+    if (result[value-1][deathColumnNumber] === "RECUPERADO") {
+      throw "[ERROR] recovered line";
+    }
+
+    result[value-1][deathColumnNumber] = "";
+    console.log('obito removido na linha ' + value + '\n', result[value-1] + '\n\n');
   });
-});
+
+  linesToAddDeath.forEach(function (value) {
+    value = parseInt(value);
+    if (result[value-1][deathColumnNumber] === "RECUPERADO") {
+      throw "[ERROR] recovered line";
+    }
+
+    result[value-1][deathColumnNumber] = "OBITO";
+    console.log('obito adicionado na linha ' + value + '\n', result[value-1] + '\n\n');
+  });
+
+  result.map(function (line) {
+    fileResult += line + "\n";
+  });
+
+  await fsPromises.writeFile("fixed_microdados.csv", fileResult);
+
+  console.log("File was created successfully.");
+
+  rlBash.close();
+
+  process.exit(0);
+};
+
+main();
