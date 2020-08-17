@@ -60,7 +60,7 @@ const main = async () => {
   let deathColumnNumber = await getLine();
   console.log('Linhas para remover obito separadas por espaço: ');
   let linesToRemoveDeath = await getLine();
-  console.log('Linhas adicionar obito separadas por espaço: ');
+  console.log('Linhas para adicionar obito separadas por espaço: ');
   let linesToAddDeath = await getLine();
 
   deathColumnNumber = deathColumnNumber ? parseInt(deathColumnNumber) : 11;
