@@ -42,7 +42,8 @@ const readCsvFile = async () => {
       }
 
       if (!shouldJoinNextLine) {
-        data.push(fullLine);
+        let splittedFullLine = fullLine.split(';');
+        data.push(splittedFullLine);
         fullLine = '';
         //console.log(`line ${lineCounter++} success`);
       }
@@ -80,28 +81,28 @@ const main = async () => {
 
   let fileResult = "";
 
-  linesToRemoveDeath.forEach(function (value) {
-    value = parseInt(value);
-    if (result[value-1][deathColumnNumber] === "RECUPERADO") {
+  for (let i = 0; i < linesToRemoveDeath.length; i++) {
+    let value = parseInt(linesToRemoveDeath[i]);
+
+    if (result[value - 1][deathColumnNumber - 1] === "RECUPERADO") {
       throw "[ERROR] recovered line";
     }
 
-    result[value-1][deathColumnNumber] = "";
-    console.log('obito removido na linha ' + value + '\n', result[value-1] + '\n\n');
-  });
+    result[value - 1][deathColumnNumber - 1] = "";
+  }
 
-  linesToAddDeath.forEach(function (value) {
-    value = parseInt(value);
-    if (result[value-1][deathColumnNumber] === "RECUPERADO") {
+  for (let i = 0; i < linesToAddDeath.length; i++) {
+    let value = parseInt(linesToAddDeath[i]);
+
+    if (result[value - 1][deathColumnNumber - 1] === "RECUPERADO") {
       throw "[ERROR] recovered line";
     }
 
-    result[value-1][deathColumnNumber] = "OBITO";
-    console.log('obito adicionado na linha ' + value + '\n', result[value-1] + '\n\n');
-  });
+    result[value - 1][deathColumnNumber - 1] = "OBITO";
+  }
 
   result.map(function (line) {
-    fileResult += line + "\n";
+    fileResult += line.join(';') + "\n";
   });
 
   await fsPromises.writeFile("fixed_microdados.csv", fileResult);
