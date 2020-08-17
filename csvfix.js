@@ -45,7 +45,6 @@ const readCsvFile = async () => {
         let splittedFullLine = fullLine.split(';');
         data.push(splittedFullLine);
         fullLine = '';
-        //console.log(`line ${lineCounter++} success`);
       }
     }
 
