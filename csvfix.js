@@ -26,7 +26,6 @@ const readCsvFile = async () => {
     });
 
     let fullLine = '';
-    let lineCounter = 1;
 
     for await (const line of readInterface) {
       let shouldJoinNextLine = false;
@@ -84,6 +83,7 @@ const main = async () => {
     let value = parseInt(linesToRemoveDeath[i]);
 
     if (result[value - 1][deathColumnNumber - 1] === "RECUPERADO") {
+      console.error('Linha com status RECUPERADO não deve ser substituída');
       throw "[ERROR] recovered line";
     }
 
@@ -94,6 +94,7 @@ const main = async () => {
     let value = parseInt(linesToAddDeath[i]);
 
     if (result[value - 1][deathColumnNumber - 1] === "RECUPERADO") {
+      console.error('Linha com status RECUPERADO não deve ser substituída');
       throw "[ERROR] recovered line";
     }
 
