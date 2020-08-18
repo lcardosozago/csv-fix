@@ -34,9 +34,9 @@ const readCsvFile = async () => {
 
       fullLine += lineWithoutBreakline;
 
-      let splittedByDoubleQuote = fullLine.split('"');
+      let numberOfDoubleQuotes = (fullLine.match(/"/g)||[]).length;
 
-      if (splittedByDoubleQuote.length % 2 === 0) {
+      if (numberOfDoubleQuotes % 2 === 1) {
         shouldJoinNextLine = true;
       }
 
