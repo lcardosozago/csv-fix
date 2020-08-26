@@ -84,7 +84,6 @@ const main = async () => {
 
     if (result[value - 1][deathColumnNumber - 1] === "RECUPERADO") {
       console.error('Linha com status RECUPERADO não deve ser substituída');
-      throw "[ERROR] recovered line";
     }
 
     result[value - 1][deathColumnNumber - 1] = "";
@@ -95,7 +94,6 @@ const main = async () => {
 
     if (result[value - 1][deathColumnNumber - 1] === "RECUPERADO") {
       console.error('Linha com status RECUPERADO não deve ser substituída');
-      throw "[ERROR] recovered line";
     }
 
     result[value - 1][deathColumnNumber - 1] = "OBITO";
